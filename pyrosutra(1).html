@@ -1,0 +1,1136 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🔥 PyroSutra — El Juego de Parejas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0008;
+    --purple-deep: #2a0035;
+    --purple-mid: #6b0080;
+    --purple-bright: #c026d3;
+    --purple-glow: #e879f9;
+    --accent: #ff3366;
+    --gold: #f59e0b;
+    --text: #f3e8ff;
+    --text-muted: #a78bba;
+    --card: rgba(42, 0, 53, 0.6);
+    --border: rgba(192, 38, 211, 0.25);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Cormorant Garamond', serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+    position: relative;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 60% 40% at 20% 10%, rgba(107,0,128,0.25) 0%, transparent 60%),
+      radial-gradient(ellipse 50% 50% at 80% 80%, rgba(192,38,211,0.15) 0%, transparent 60%),
+      radial-gradient(ellipse 40% 30% at 50% 50%, rgba(255,51,102,0.05) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .particle {
+    position: fixed;
+    pointer-events: none;
+    animation: floatUp linear infinite;
+    font-size: 14px;
+    opacity: 0;
+    z-index: 1;
+  }
+
+  @keyframes floatUp {
+    0%   { transform: translateY(110vh) rotate(0deg); opacity: 0; }
+    10%  { opacity: 0.4; }
+    90%  { opacity: 0.2; }
+    100% { transform: translateY(-10vh) rotate(360deg); opacity: 0; }
+  }
+
+  #app {
+    position: relative;
+    z-index: 10;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  .screen {
+    display: none;
+    width: 100%;
+    max-width: 580px;
+    animation: fadeIn 0.5s ease;
+  }
+  .screen.active { display: flex; flex-direction: column; align-items: center; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(18px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── LOGO ── */
+  .logo { text-align: center; margin-bottom: 28px; }
+  .logo-fire {
+    font-size: clamp(44px, 11vw, 72px);
+    display: block;
+    filter: drop-shadow(0 0 20px rgba(255,100,0,0.8));
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50%       { transform: scale(1.08); }
+  }
+  .logo-title {
+    font-size: clamp(34px, 9vw, 62px);
+    font-weight: 300;
+    letter-spacing: 0.12em;
+    background: linear-gradient(135deg, var(--purple-glow), var(--accent));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    display: block;
+    line-height: 1;
+  }
+  .logo-sub {
+    font-size: clamp(11px, 2.5vw, 14px);
+    color: var(--text-muted);
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    font-weight: 300;
+    margin-top: 8px;
+    font-family: 'DM Mono', monospace;
+  }
+
+  /* ── CARD ── */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: clamp(22px, 6vw, 38px);
+    width: 100%;
+    backdrop-filter: blur(12px);
+    box-shadow: 0 0 60px rgba(107,0,128,0.2), inset 0 1px 0 rgba(255,255,255,0.05);
+  }
+  .card-title {
+    font-size: clamp(19px, 5vw, 26px);
+    font-weight: 300;
+    text-align: center;
+    margin-bottom: 24px;
+    font-style: italic;
+  }
+
+  /* ── TYPE GRID ── */
+  .type-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+  .type-btn {
+    background: rgba(107,0,128,0.2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 22px 14px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: center;
+    color: var(--text);
+    font-family: 'Cormorant Garamond', serif;
+  }
+  .type-btn:hover, .type-btn.selected {
+    background: rgba(192,38,211,0.25);
+    border-color: var(--purple-bright);
+    box-shadow: 0 0 28px rgba(192,38,211,0.3);
+    transform: translateY(-2px);
+  }
+  .type-btn .icon  { font-size: 38px; display: block; margin-bottom: 8px; }
+  .type-btn .label { font-size: 17px; font-weight: 400; display: block; }
+  .type-btn .desc  { font-size: 12px; color: var(--text-muted); display: block; margin-top: 4px; font-family: 'DM Mono', monospace; }
+
+  /* ── INPUTS ── */
+  .input-group { margin-bottom: 18px; }
+  .input-label {
+    display: block;
+    font-size: 13px;
+    color: var(--text-muted);
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 0.1em;
+    margin-bottom: 7px;
+    text-transform: uppercase;
+  }
+  .input-field {
+    width: 100%;
+    background: rgba(0,0,0,0.4);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 13px 17px;
+    color: var(--text);
+    font-size: 20px;
+    font-family: 'Cormorant Garamond', serif;
+    outline: none;
+    transition: border-color 0.3s, box-shadow 0.3s;
+  }
+  .input-field:focus {
+    border-color: var(--purple-bright);
+    box-shadow: 0 0 20px rgba(192,38,211,0.2);
+  }
+  .input-field::placeholder { color: rgba(167,139,186,0.4); }
+
+  /* ── BOTONES PRINCIPALES ── */
+  .btn-main {
+    display: block; width: 100%; padding: 15px;
+    background: linear-gradient(135deg, var(--purple-mid), var(--purple-bright));
+    border: none; border-radius: 14px;
+    color: white;
+    font-size: clamp(15px, 3.8vw, 19px);
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 400; letter-spacing: 0.1em;
+    cursor: pointer; transition: all 0.3s ease;
+    box-shadow: 0 4px 28px rgba(192,38,211,0.4);
+    margin-top: 8px;
+  }
+  .btn-main:hover { transform: translateY(-2px); box-shadow: 0 8px 38px rgba(192,38,211,0.6); }
+  .btn-main:active { transform: translateY(0); }
+  .btn-main:disabled { opacity: 0.38; cursor: not-allowed; transform: none; }
+
+  .btn-secondary {
+    display: block; width: 100%; padding: 11px;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    color: var(--text-muted); font-size: 15px;
+    font-family: 'Cormorant Garamond', serif;
+    cursor: pointer; transition: all 0.3s; margin-top: 11px;
+    text-align: center; text-decoration: none;
+  }
+  .btn-secondary:hover { border-color: var(--purple-bright); color: var(--text); }
+
+  /* ── ACCESSORIES SCREEN ── */
+  .acc-intro {
+    font-size: clamp(13px, 3vw, 15px);
+    color: var(--text-muted);
+    text-align: center;
+    font-family: 'DM Mono', monospace;
+    margin-bottom: 22px;
+    line-height: 1.6;
+  }
+
+  .acc-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 11px;
+    margin-bottom: 24px;
+  }
+
+  .acc-btn {
+    background: rgba(107,0,128,0.15);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px 10px;
+    cursor: pointer;
+    text-align: center;
+    color: var(--text);
+    font-family: 'Cormorant Garamond', serif;
+    transition: all 0.25s ease;
+    position: relative;
+  }
+  .acc-btn:hover {
+    background: rgba(192,38,211,0.18);
+    border-color: rgba(192,38,211,0.5);
+    transform: translateY(-2px);
+  }
+  .acc-btn.selected {
+    background: rgba(192,38,211,0.28);
+    border-color: var(--purple-bright);
+    box-shadow: 0 0 20px rgba(192,38,211,0.25);
+  }
+  .acc-btn .acc-icon  { font-size: 28px; display: block; margin-bottom: 7px; }
+  .acc-btn .acc-label { font-size: 13px; display: block; line-height: 1.3; }
+  .acc-btn .acc-check {
+    position: absolute; top: 7px; right: 9px;
+    font-size: 13px; opacity: 0; transition: opacity 0.2s;
+  }
+  .acc-btn.selected .acc-check { opacity: 1; }
+
+  .acc-skip {
+    font-size: 13px; color: var(--text-muted);
+    font-family: 'DM Mono', monospace;
+    text-align: center; margin-top: 6px;
+  }
+
+  /* ── FLAMES ── */
+  .flames-row { display: flex; justify-content: center; gap: 9px; margin-bottom: 24px; }
+  .flame-icon {
+    font-size: clamp(20px, 5vw, 30px);
+    transition: all 0.4s ease;
+    filter: grayscale(1) opacity(0.3);
+  }
+  .flame-icon.active {
+    filter: none;
+    animation: flameGlow 1.5s ease-in-out infinite;
+  }
+  @keyframes flameGlow {
+    0%, 100% { filter: drop-shadow(0 0 6px rgba(255,100,0,0.8)); transform: scale(1); }
+    50%       { filter: drop-shadow(0 0 14px rgba(255,180,0,1)); transform: scale(1.14); }
+  }
+
+  /* ── CHALLENGE ── */
+  .challenge-container { text-align: center; width: 100%; }
+  .challenge-level {
+    font-family: 'DM Mono', monospace; font-size: 11px;
+    letter-spacing: 0.3em; color: var(--purple-bright);
+    text-transform: uppercase; margin-bottom: 14px;
+  }
+  .challenge-counter {
+    font-family: 'DM Mono', monospace; font-size: 11px;
+    color: rgba(167,139,186,0.5); margin-bottom: 16px;
+    letter-spacing: 0.15em;
+  }
+  .challenge-text {
+    font-size: clamp(21px, 5.2vw, 30px);
+    font-weight: 300; line-height: 1.55;
+    color: var(--text); margin-bottom: 28px; font-style: italic;
+  }
+  .challenge-text .nh { color: var(--purple-glow); font-weight: 600; font-style: normal; }
+  .challenge-text .acc-tag {
+    display: inline-block;
+    background: rgba(255,51,102,0.15);
+    border: 1px solid rgba(255,51,102,0.3);
+    border-radius: 6px;
+    padding: 1px 7px;
+    font-size: 0.75em;
+    color: var(--accent);
+    font-style: normal;
+    vertical-align: middle;
+    margin-left: 4px;
+  }
+
+  /* ── TIMER ── */
+  .timer-display { display: flex; flex-direction: column; align-items: center; margin-bottom: 26px; }
+  .timer-ring { position: relative; width: 96px; height: 96px; margin-bottom: 7px; }
+  .timer-ring svg { transform: rotate(-90deg); width: 96px; height: 96px; }
+  .timer-ring .track  { fill: none; stroke: rgba(107,0,128,0.2); stroke-width: 6; }
+  .timer-ring .prog   { fill: none; stroke: var(--purple-bright); stroke-width: 6; stroke-linecap: round; transition: stroke-dashoffset 1s linear; filter: drop-shadow(0 0 6px var(--purple-bright)); }
+  .timer-number { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 300; font-family: 'DM Mono', monospace; color: var(--purple-glow); }
+  .timer-label  { font-size: 12px; color: var(--text-muted); font-family: 'DM Mono', monospace; }
+
+  .no-timer-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: rgba(245,158,11,0.13); border: 1px solid rgba(245,158,11,0.28);
+    border-radius: 20px; padding: 7px 18px; font-size: 14px;
+    color: var(--gold); margin-bottom: 26px; font-family: 'DM Mono', monospace;
+  }
+
+  /* ── PROGRESS BAR ── */
+  .progress-bar-wrap { width: 100%; height: 4px; background: rgba(107,0,128,0.2); border-radius: 2px; margin-bottom: 26px; overflow: hidden; }
+  .progress-bar-fill { height: 100%; background: linear-gradient(90deg, var(--purple-mid), var(--purple-bright)); border-radius: 2px; transition: width 0.6s ease; box-shadow: 0 0 10px var(--purple-bright); }
+
+  /* ── ACTION ROW ── */
+  .action-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 11px; }
+  .btn-action {
+    background: transparent; border: 1px solid rgba(192,38,211,0.2);
+    border-radius: 12px; padding: 10px 8px;
+    color: var(--text-muted); font-size: 13px;
+    font-family: 'DM Mono', monospace; cursor: pointer; transition: all 0.3s;
+  }
+  .btn-action:hover { border-color: var(--purple-bright); color: var(--text); background: rgba(192,38,211,0.08); }
+
+  /* ── KOFI ── */
+  .kofi-banner {
+    text-align: center; margin-top: 14px; padding: 18px;
+    border: 1px solid rgba(245,158,11,0.18); border-radius: 16px;
+    background: rgba(245,158,11,0.04); width: 100%;
+  }
+  .kofi-banner p { font-size: 14px; color: var(--text-muted); margin-bottom: 11px; font-family: 'DM Mono', monospace; }
+  .kofi-btn {
+    display: inline-block;
+    background: linear-gradient(135deg, #f59e0b, #ff6b35);
+    color: white; text-decoration: none;
+    padding: 9px 22px; border-radius: 22px;
+    font-size: 14px; font-family: 'DM Mono', monospace;
+    transition: all 0.3s; box-shadow: 0 4px 18px rgba(245,158,11,0.28);
+  }
+  .kofi-btn:hover { transform: translateY(-2px); box-shadow: 0 7px 28px rgba(245,158,11,0.48); }
+
+  /* ── FINAL ── */
+  .final-emojis { position: fixed; inset: 0; pointer-events: none; z-index: 5; overflow: hidden; }
+  .final-emoji { position: absolute; animation: finalFloat linear infinite; opacity: 0; }
+  @keyframes finalFloat {
+    0%   { transform: translateY(100vh) rotate(0deg) scale(0.5); opacity: 0; }
+    15%  { opacity: 0.8; }
+    85%  { opacity: 0.6; }
+    100% { transform: translateY(-10vh) rotate(720deg) scale(1); opacity: 0; }
+  }
+  .final-title {
+    font-size: clamp(38px, 9.5vw, 68px); font-weight: 300; text-align: center;
+    background: linear-gradient(135deg, var(--purple-glow), var(--accent), var(--gold));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    margin-bottom: 14px; animation: shimmer 3s ease infinite;
+  }
+  @keyframes shimmer { 0%, 100% { filter: brightness(1); } 50% { filter: brightness(1.3); } }
+  .final-subtitle { font-size: clamp(15px, 3.8vw, 21px); color: var(--text-muted); text-align: center; font-style: italic; margin-bottom: 36px; line-height: 1.6; }
+  .final-subtitle .nh { color: var(--purple-glow); font-style: normal; font-weight: 600; }
+
+  /* ── FOOTER ── */
+  .site-footer {
+    position: relative; z-index: 10;
+    text-align: center; padding: 28px 20px 18px;
+    font-family: 'DM Mono', monospace; font-size: 11px;
+    color: rgba(167,139,186,0.32); line-height: 1.8;
+    max-width: 580px; margin: 0 auto;
+  }
+  .site-footer a { color: rgba(167,139,186,0.42); text-decoration: none; border-bottom: 1px solid rgba(167,139,186,0.18); transition: color 0.2s; }
+  .site-footer a:hover { color: rgba(167,139,186,0.68); }
+
+  /* ── MISC ── */
+  @media (max-width: 400px) {
+    .type-grid { grid-template-columns: 1fr; }
+    .acc-grid  { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); }
+  }
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25%       { transform: translateX(-8px); }
+    75%       { transform: translateX(8px); }
+  }
+  .shake { animation: shake 0.4s ease; }
+</style>
+</head>
+<body>
+
+<div id="particles"></div>
+
+<div id="app">
+
+  <!-- ═══ PANTALLA 1: Tipo de pareja ═══ -->
+  <div class="screen active" id="screen-type">
+    <div class="logo">
+      <span class="logo-fire">🔥</span>
+      <span class="logo-title">PyroSutra</span>
+      <span class="logo-sub">El juego de parejas</span>
+    </div>
+    <div class="card">
+      <p class="card-title">¿Cómo vais a jugar?</p>
+      <div class="type-grid">
+        <button class="type-btn" onclick="selectType('fisica', this)">
+          <span class="icon">👫</span>
+          <span class="label">En persona</span>
+          <span class="desc">Misma habitación</span>
+        </button>
+        <button class="type-btn" onclick="selectType('virtual', this)">
+          <span class="icon">📱</span>
+          <span class="label">A distancia</span>
+          <span class="desc">Videollamada / chat</span>
+        </button>
+      </div>
+      <button class="btn-main" id="btn-type-next" onclick="goToNames()" disabled style="margin-top:20px">Continuar →</button>
+    </div>
+  </div>
+
+  <!-- ═══ PANTALLA 2: Nombres ═══ -->
+  <div class="screen" id="screen-names">
+    <div class="logo">
+      <span class="logo-fire" style="font-size:34px">🔥</span>
+      <span class="logo-title" style="font-size:34px">PyroSutra</span>
+    </div>
+    <div class="card">
+      <p class="card-title">¿Quiénes juegan esta noche?</p>
+      <div class="input-group">
+        <label class="input-label">Persona 1</label>
+        <input class="input-field" id="name1" type="text" placeholder="Tu nombre..." maxlength="20" autocomplete="off">
+      </div>
+      <div class="input-group">
+        <label class="input-label">Persona 2</label>
+        <input class="input-field" id="name2" type="text" placeholder="Su nombre..." maxlength="20" autocomplete="off">
+      </div>
+      <button class="btn-main" onclick="goToAccessories()">Continuar →</button>
+      <button class="btn-secondary" onclick="showScreen('screen-type')">← Volver</button>
+    </div>
+  </div>
+
+  <!-- ═══ PANTALLA 3: Accesorios / experiencia ═══ -->
+  <div class="screen" id="screen-accessories">
+    <div class="logo">
+      <span class="logo-fire" style="font-size:28px">🔥</span>
+      <span class="logo-title" style="font-size:28px">PyroSutra</span>
+    </div>
+    <div class="card">
+      <p class="card-title">Personaliza tu experiencia</p>
+      <p class="acc-intro">Selecciona lo que tenéis disponible esta noche.<br>El juego adaptará los retos automáticamente.</p>
+      <div class="acc-grid" id="acc-grid">
+        <!-- Se rellena dinámicamente -->
+      </div>
+      <button class="btn-main" onclick="startGame()">🔥 ¡Empezar PyroSutra!</button>
+      <button class="btn-secondary" onclick="showScreen('screen-names')">← Volver</button>
+    </div>
+  </div>
+
+  <!-- ═══ PANTALLA 4: Reto activo ═══ -->
+  <div class="screen" id="screen-challenge">
+    <div class="card">
+      <div class="challenge-container" id="challenge-content"></div>
+    </div>
+    <div class="kofi-banner">
+      <p>¿Os está gustando? ☕</p>
+      <a href="https://ko-fi.com/TU_USUARIO" target="_blank" class="kofi-btn">Apoya PyroSutra en Ko-fi</a>
+    </div>
+  </div>
+
+  <!-- ═══ PANTALLA 5: Final ═══ -->
+  <div class="screen" id="screen-final">
+    <div class="final-emojis" id="final-emojis"></div>
+    <div class="card" style="text-align:center; position:relative; z-index:10;">
+      <div class="final-title">¡A disfrutar!</div>
+      <p class="final-subtitle" id="final-msg"></p>
+      <div style="font-size:38px; margin:22px 0; letter-spacing:8px;">🔥✨💜</div>
+      <button class="btn-main" onclick="playAgain()">🔄 Volver a jugar</button>
+      <a href="https://ko-fi.com/TU_USUARIO" target="_blank" class="btn-secondary" style="margin-top:14px;">
+        ☕ ¿Os ha gustado? Apoya PyroSutra en Ko-fi
+      </a>
+    </div>
+  </div>
+
+</div>
+
+<footer class="site-footer">
+  Esta página está hecha por <a href="https://rgonzalez.me" target="_blank" rel="noopener">Roberto González</a>, desarrollada independientemente sin fines lucrativos. Las donaciones son opcionales y no suponen ventaja alguna. Se asistió en la programación utilizando <a href="https://claude.ai" target="_blank" rel="noopener">Claude</a>.
+</footer>
+
+<script>
+// ╔══════════════════════════════════════════════════════════════╗
+// ║  CONFIGURACIÓN — edita estos valores según prefieras         ║
+// ╚══════════════════════════════════════════════════════════════╝
+
+const RETOS_POR_LLAMA = 3;   // Cuántos retos hay que completar por cada 🔥 antes de subir de nivel
+const TOTAL_LLAMAS    = 5;   // Número total de niveles (llamas)
+
+// ╔══════════════════════════════════════════════════════════════╗
+// ║  ACCESORIOS / EXTRAS DISPONIBLES                             ║
+// ╚══════════════════════════════════════════════════════════════╝
+
+// Cada accesorio tiene:
+//   id       → identificador único (usado para filtrar retos extra)
+//   icon     → emoji
+//   label    → nombre visible
+//   modes    → en qué modos aparece: 'fisica', 'virtual', 'ambos'
+
+const ACCESSORIES = [
+  { id: 'vibrador',     icon: '📳', label: 'Vibrador',        modes: 'ambos' },
+  { id: 'plug',         icon: '🔌', label: 'Plug anal',       modes: 'ambos' },
+  { id: 'consolador',   icon: '💜', label: 'Consolador',      modes: 'ambos' },
+  { id: 'traje',        icon: '👙', label: 'Traje sexy',      modes: 'ambos' },
+  { id: 'venda',        icon: '🎀', label: 'Venda de ojos',   modes: 'fisica' },
+  { id: 'esposasacc',   icon: '⛓️', label: 'Esposas',         modes: 'fisica' },
+  { id: 'dados',        icon: '🎲', label: 'Dados eróticos',  modes: 'fisica' },
+  { id: 'plumas',       icon: '🪶', label: 'Plumas / cosqui', modes: 'fisica' },
+  { id: 'aceite',       icon: '💧', label: 'Aceite de masaje', modes: 'fisica' },
+  { id: 'camara',       icon: '📷', label: 'Cámara / fotos',  modes: 'virtual' },
+  { id: 'microfono',    icon: '🎙️', label: 'Micrófono / ASMR', modes: 'virtual' },
+  { id: 'hielo',        icon: '🧊', label: 'Hielo / calor',   modes: 'fisica' },
+];
+
+// ╔══════════════════════════════════════════════════════════════╗
+// ║  BANCO DE RETOS BASE — por nivel y modo                      ║
+// ╚══════════════════════════════════════════════════════════════╝
+
+const CHALLENGES_BASE = {
+  fisica: [
+    // Nivel 1 🔥
+    [
+      { text: "{A}, dale a {B} un beso suave en el cuello durante 30 segundos.", timer: 30 },
+      { text: "{A}, acaricia el cabello de {B} muy despacio durante 1 minuto.", timer: 60 },
+      { text: "{A}, susúrrale al oído a {B} tres cosas que te gustan de él/ella.", timer: 0 },
+      { text: "{B}, dale un masaje en los hombros a {A} durante 1 minuto.", timer: 60 },
+      { text: "{A}, toma la mano de {B} y acaríciala en silencio durante 45 segundos.", timer: 45 },
+      { text: "{B}, mira a los ojos a {A} y dile una cosa que te encante de él/ella.", timer: 0 },
+      { text: "{A}, besa a {B} en la frente, las mejillas y los labios muy suavemente.", timer: 0 },
+    ],
+    // Nivel 2 🔥🔥
+    [
+      { text: "{A}, haz un baile seductor para {B} durante 2 minutos.", timer: 120 },
+      { text: "{A}, besa a {B} en los labios sin parar durante 1 minuto.", timer: 60 },
+      { text: "{B}, traza con el dedo el contorno del cuerpo de {A} muy despacio.", timer: 60 },
+      { text: "{A}, describe en voz alta qué parte del cuerpo de {B} te vuelve loco/a.", timer: 0 },
+      { text: "{B}, besa a {A} en la oreja y en el cuello durante 1 minuto sin parar.", timer: 60 },
+      { text: "Ambos: daos el beso más lento y profundo que podáis durante 90 segundos.", timer: 90 },
+      { text: "{A}, muérdele suavemente el lóbulo de la oreja a {B} durante 30 segundos.", timer: 30 },
+    ],
+    // Nivel 3 🔥🔥🔥
+    [
+      { text: "{A}, quítale una prenda de ropa a {B} muy lentamente.", timer: 0 },
+      { text: "{B}, dale a {A} un masaje sensual en la espalda durante 2 minutos.", timer: 120 },
+      { text: "{A}, besa a {B} desde el cuello hasta el hombro durante 90 segundos.", timer: 90 },
+      { text: "Ambos: miradlos a los ojos sin reíros durante 2 minutos sin dejar de acariciarse.", timer: 120 },
+      { text: "{A}, recorre con los labios el brazo de {B} de la muñeca al hombro muy despacio.", timer: 60 },
+      { text: "{B}, di en voz alta tu fantasía favorita con {A} con todo el detalle que puedas.", timer: 0 },
+      { text: "{A}, explora con las yemas de los dedos la espalda de {B} durante 2 minutos.", timer: 120 },
+    ],
+    // Nivel 4 🔥🔥🔥🔥
+    [
+      { text: "{A}, besa a {B} de arriba abajo durante 2 minutos sin llegar a los labios.", timer: 120 },
+      { text: "{B}, lleva a {A} de la mano y bésalo/a durante 3 minutos.", timer: 180 },
+      { text: "{A}, explora con las manos el cuerpo de {B} durante 2 minutos.", timer: 120 },
+      { text: "Ambos: desnúdense mutuamente muy despacio sin ninguna prisa.", timer: 0 },
+      { text: "{A}, besa a {B} en la parte del cuerpo que creas que más le gusta durante 2 minutos.", timer: 120 },
+      { text: "{B}, decide cómo quieres que {A} te toque durante 3 minutos y guíalo/a.", timer: 180 },
+      { text: "{A}, recorre con los labios el cuerpo de {B} de cintura para arriba.", timer: 0 },
+    ],
+    // Nivel 5 🔥🔥🔥🔥🔥 — FINAL
+    [
+      { text: "Momento final 💜 — Elijan juntos la postura que más ganas les dé y déjense llevar sin límites. No hay prisa. Solo vosotros.", timer: 0, isFinal: true },
+      { text: "Momento final 💜 — {A}, elige la postura favorita y sorprende a {B}. A partir de aquí no hay instrucciones: solo vosotros dos.", timer: 0, isFinal: true },
+      { text: "Momento final 💜 — Apagad el móvil, dejad fluir lo que sienten y disfrutad sin prisa. Esta noche es vuestra.", timer: 0, isFinal: true },
+    ],
+  ],
+
+  virtual: [
+    // Nivel 1 🔥
+    [
+      { text: "{A}, muéstrale a {B} tu sonrisa más sexy mirando a la cámara durante 30 segundos.", timer: 30 },
+      { text: "{A}, dile a {B} en voz alta tres cosas que te gustan de su cuerpo.", timer: 0 },
+      { text: "{B}, manda a {A} una foto de tu parte favorita de ti mismo/a.", timer: 0 },
+      { text: "{A}, léele a {B} el mensaje más atrevido que se te ocurra ahora mismo.", timer: 0 },
+      { text: "{B}, ponte la prenda con la que más sexy te sientas y muéstrasela a {A}.", timer: 0 },
+      { text: "Ambos: mandaos un audio de voz con lo que más os gusta del otro. Sin escribir.", timer: 0 },
+      { text: "{A}, describe con detalle cómo sería el primer beso si estuvierais juntos/as.", timer: 0 },
+    ],
+    // Nivel 2 🔥🔥
+    [
+      { text: "{A}, haz un baile sexy frente a la cámara durante 2 minutos para {B}.", timer: 120 },
+      { text: "{B}, describe en detalle cómo besarías a {A} si estuvierais juntos/as.", timer: 0 },
+      { text: "{A}, susurra al micrófono lo que harías esta noche con {B}.", timer: 0 },
+      { text: "Ambos: poned una canción sexy y bailad solos mirándoos por cámara durante 2 minutos.", timer: 120 },
+      { text: "{B}, escribe a {A} el mensaje más atrevido que te atrevas a mandar.", timer: 0 },
+      { text: "{A}, durante 1 minuto descríbele a {B} con voz lenta lo que harías si estuvieras allí.", timer: 60 },
+      { text: "{B}, tócate lentamente el cuello y el escote mientras {A} te mira durante 1 minuto.", timer: 60 },
+    ],
+    // Nivel 3 🔥🔥🔥
+    [
+      { text: "{A}, quítate una prenda muy lentamente frente a la cámara.", timer: 0 },
+      { text: "{B}, muéstrale a {A} tu parte del cuerpo favorita durante 1 minuto.", timer: 60 },
+      { text: "{A}, léele a {B} en voz alta un mensaje muy atrevido que describa lo que sientes.", timer: 0 },
+      { text: "Ambos: miradlos a los ojos por cámara sin decir nada durante 2 minutos.", timer: 120 },
+      { text: "{B}, quítate la ropa de cintura para arriba frente a la cámara y quédate así 1 minuto.", timer: 60 },
+      { text: "{A}, dile a {B} la fantasía que nunca te has atrevido a contarle.", timer: 0 },
+      { text: "{B}, guía a {A} con tu voz diciéndole cómo quieres que se toque durante 1 minuto.", timer: 60 },
+    ],
+    // Nivel 4 🔥🔥🔥🔥
+    [
+      { text: "{A}, muéstrate ante la cámara durante 2 minutos de la forma más seductora que se te ocurra.", timer: 120 },
+      { text: "{B}, dile a {A} con todo detalle qué le haría si estuviera allí ahora mismo.", timer: 0 },
+      { text: "Ambos: quedaos lo más desvestidos posible y miradlos a los ojos por cámara durante 3 minutos.", timer: 180 },
+      { text: "{A}, escribe y lee en voz alta tu fantasía favorita con {B}.", timer: 0 },
+      { text: "{B}, durante 2 minutos guía a {A} con tu voz diciéndole exactamente cómo quieres que se toque.", timer: 120 },
+      { text: "Ambos: a la vez y en silencio, haced lo que más os apetezca frente a la cámara durante 3 minutos.", timer: 180 },
+      { text: "{A}, quédate sin ropa frente a la cámara y deja que {B} te mire durante 2 minutos.", timer: 120 },
+    ],
+    // Nivel 5 🔥🔥🔥🔥🔥 — FINAL
+    [
+      { text: "Momento final 💜 — Tenéis la pantalla solo para vosotros dos. Sin guión, sin turnos. Dejad que fluya la noche.", timer: 0, isFinal: true },
+      { text: "Momento final 💜 — {A}, decide cómo quieres que acabe esta noche y díselo a {B}. La pantalla es vuestra.", timer: 0, isFinal: true },
+      { text: "Momento final 💜 — Apagad todo lo que no seáis vosotros dos y dejad que la noche siga sola. Os lo habéis ganado.", timer: 0, isFinal: true },
+    ],
+  ]
+};
+
+// ╔══════════════════════════════════════════════════════════════╗
+// ║  RETOS EXTRA POR ACCESORIO                                   ║
+// ║  Cada accesorio inyecta retos en el nivel indicado           ║
+// ║  tag → etiqueta pequeña que se muestra en el reto            ║
+// ╚══════════════════════════════════════════════════════════════╝
+
+const CHALLENGES_EXTRAS = {
+  vibrador: {
+    fisica: {
+      1: [{ text: "{A}, enciende el vibrador al mínimo y pásaselo a {B} por el cuello durante 30 segundos.", timer: 30 }],
+      2: [{ text: "{B}, pon el vibrador en modo medio y úsalo sobre la ropa de {A} donde él/ella indique, durante 1 minuto.", timer: 60 }],
+      3: [{ text: "{A}, usa el vibrador en {B} al nivel que prefiera durante 2 minutos. {B} elige la zona.", timer: 120 }],
+      4: [{ text: "{B}, controla el vibrador mientras {A} intenta mantener la calma durante 3 minutos.", timer: 180 }],
+    },
+    virtual: {
+      1: [{ text: "{A}, enciende el vibrador y sostenlo cerca del micrófono para que {B} lo escuche.", timer: 30 }],
+      2: [{ text: "{B}, usa el vibrador en la intensidad que quieras durante 1 minuto mientras {A} te observa.", timer: 60 }],
+      3: [{ text: "{A}, usa el vibrador durante 2 minutos mientras {B} te da instrucciones por voz.", timer: 120 }],
+      4: [{ text: "Ambos: usad vuestros vibradores a la vez durante 3 minutos sin apartar los ojos de la cámara.", timer: 180 }],
+    }
+  },
+  plug: {
+    fisica: {
+      2: [{ text: "{A}, ponle el plug a {B} muy despacio. {B} avisa cuando esté listo/a.", timer: 0 }],
+      3: [{ text: "{B}, lleva el plug puesto durante el siguiente reto. {A} no puede tocarlo.", timer: 0 }],
+      4: [{ text: "{A}, retira el plug de {B} muy suavemente cuando él/ella lo pida.", timer: 0 }],
+    },
+    virtual: {
+      2: [{ text: "{A}, ponte el plug y confirma a {B} cuando estés listo/a. Luego continúa mirando a cámara.", timer: 0 }],
+      3: [{ text: "{B}, lleva el plug puesto durante los próximos 2 minutos mientras seguís en llamada.", timer: 120 }],
+    }
+  },
+  consolador: {
+    fisica: {
+      3: [{ text: "{A}, prepara el consolador y deja que {B} decida cómo y dónde usarlo.", timer: 0 }],
+      4: [{ text: "{B}, usa el consolador en {A} durante 2 minutos al ritmo que {A} te pida.", timer: 120 }],
+    },
+    virtual: {
+      3: [{ text: "{A}, usa el consolador durante 1 minuto mientras {B} te observa y te dice lo que piensa.", timer: 60 }],
+      4: [{ text: "Ambos: usad vuestros consoladores a la vez durante 2 minutos mirándoos a los ojos por cámara.", timer: 120 }],
+    }
+  },
+  traje: {
+    fisica: {
+      1: [{ text: "{A}, ponte el traje sexy y aparece delante de {B}. Deja que te mire en silencio durante 1 minuto.", timer: 60 }],
+      2: [{ text: "{B}, camina lentamente por la habitación con el traje puesto mientras {A} te observa durante 1 minuto.", timer: 60 }],
+    },
+    virtual: {
+      1: [{ text: "{A}, ponte el traje sexy y vuelve a la cámara. {B} tiene 1 minuto para mirarte sin decir nada.", timer: 60 }],
+      2: [{ text: "{B}, muéstrate ante la cámara con el traje puesto y posa durante 1 minuto para {A}.", timer: 60 }],
+    }
+  },
+  venda: {
+    fisica: {
+      2: [{ text: "{A}, cúbrete los ojos con la venda. {B} tiene 1 minuto para tocarte donde quiera.", timer: 60 }],
+      3: [{ text: "{B}, ponte la venda. {A} te guiará con su voz y sus manos durante 2 minutos.", timer: 120 }],
+      4: [{ text: "{A}, con la venda puesta, adivina con las manos qué parte del cuerpo de {B} estás tocando.", timer: 0 }],
+    }
+  },
+  esposasacc: {
+    fisica: {
+      3: [{ text: "{A}, esposa a {B} suavemente. {B} tiene los brazos inmovilizados durante el siguiente reto.", timer: 0 }],
+      4: [{ text: "Ambos: decidid juntos quién lleva las esposas y durante cuánto tiempo. El otro/a toma el control.", timer: 0 }],
+    }
+  },
+  dados: {
+    fisica: {
+      1: [{ text: "{A}, lanza los dados eróticos y haz exactamente lo que indiquen durante 1 minuto.", timer: 60 }],
+      2: [{ text: "{B}, lanza los dados y el resultado lo ejecutáis los dos juntos.", timer: 0 }],
+      3: [{ text: "Ambos: lanzad los dados por turnos — lo que salga, se hace sin preguntas.", timer: 0 }],
+    }
+  },
+  plumas: {
+    fisica: {
+      1: [{ text: "{A}, recorre el cuello y los brazos de {B} con la pluma muy despacio durante 1 minuto.", timer: 60 }],
+      2: [{ text: "{B}, usa la pluma en la espalda desnuda de {A} durante 2 minutos sin repetir la misma zona.", timer: 120 }],
+      3: [{ text: "{A}, con los ojos de {B} cerrados, recorre su cuerpo con la pluma y que adivine la zona.", timer: 0 }],
+    }
+  },
+  aceite: {
+    fisica: {
+      2: [{ text: "{A}, calienta el aceite entre las manos y dale a {B} un masaje en los hombros y cuello durante 2 minutos.", timer: 120 }],
+      3: [{ text: "{B}, usa el aceite de masaje para explorar la espalda de {A} durante 3 minutos.", timer: 180 }],
+      4: [{ text: "{A}, da a {B} un masaje completo con aceite por todo el cuerpo.", timer: 0 }],
+    }
+  },
+  hielo: {
+    fisica: {
+      2: [{ text: "{A}, pasa un cubito de hielo por el cuello y los hombros de {B} durante 30 segundos.", timer: 30 }],
+      3: [{ text: "{B}, alterna hielo y calor (cubito + tu boca) en el cuello de {A} durante 1 minuto.", timer: 60 }],
+      4: [{ text: "{A}, elige una zona del cuerpo de {B} y usa el hielo durante 1 minuto mientras lo/a besas.", timer: 60 }],
+    }
+  },
+  camara: {
+    virtual: {
+      2: [{ text: "{A}, hazte una foto seductora ahora mismo y mándasela a {B}. {B} responde con otra.", timer: 0 }],
+      3: [{ text: "{B}, tómate una foto de la parte del cuerpo que más te guste ahora mismo y compártela con {A}.", timer: 0 }],
+      4: [{ text: "Ambos: tomaos fotos el uno al otro durante 2 minutos por videollamada. Los mejores momentos quedan.", timer: 120 }],
+    }
+  },
+  microfono: {
+    virtual: {
+      2: [{ text: "{A}, susurra al micrófono algo que le ponga los pelos de punta a {B} durante 1 minuto.", timer: 60 }],
+      3: [{ text: "{B}, cierra los ojos y deja que {A} te describa con su voz lo que haría contigo durante 2 minutos.", timer: 120 }],
+      4: [{ text: "{A}, graba un audio de voz muy íntimo para {B} y mándaselo. {B} lo escucha en bucle.", timer: 0 }],
+    }
+  },
+};
+
+// ╔══════════════════════════════════════════════════════════════╗
+// ║  ESTADO DEL JUEGO                                            ║
+// ╚══════════════════════════════════════════════════════════════╝
+
+let state = {
+  type:            null,    // 'fisica' | 'virtual'
+  name1:           '',
+  name2:           '',
+  accessories:     [],      // IDs de accesorios seleccionados
+  levelIndex:      0,       // nivel actual 0..4
+  retoEnNivel:     0,       // cuántos retos se han hecho en este nivel
+  pool:            [],      // pool mezclado para el nivel actual
+  poolIdx:         0,       // posición en el pool
+  currentChallenge: null,
+  timerInterval:   null,
+  timerLeft:       0,
+};
+
+// ╔══════════════════════════════════════════════════════════════╗
+// ║  INICIALIZACIÓN DE ACCESORIOS                                ║
+// ╚══════════════════════════════════════════════════════════════╝
+
+function buildAccessoriesScreen() {
+  const grid = document.getElementById('acc-grid');
+  grid.innerHTML = '';
+  const mode = state.type;
+  ACCESSORIES
+    .filter(a => a.modes === 'ambos' || a.modes === mode)
+    .forEach(acc => {
+      const btn = document.createElement('button');
+      btn.className = 'acc-btn';
+      btn.dataset.id = acc.id;
+      btn.innerHTML = `
+        <span class="acc-check">✓</span>
+        <span class="acc-icon">${acc.icon}</span>
+        <span class="acc-label">${acc.label}</span>
+      `;
+      btn.addEventListener('click', () => toggleAccessory(acc.id, btn));
+      grid.appendChild(btn);
+    });
+}
+
+function toggleAccessory(id, btn) {
+  btn.classList.toggle('selected');
+  if (btn.classList.contains('selected')) {
+    if (!state.accessories.includes(id)) state.accessories.push(id);
+  } else {
+    state.accessories = state.accessories.filter(a => a !== id);
+  }
+}
+
+// ╔══════════════════════════════════════════════════════════════╗
+// ║  CONSTRUCCIÓN DEL POOL DE RETOS PARA UN NIVEL                ║
+// ╚══════════════════════════════════════════════════════════════╝
+
+function buildPool(levelIdx) {
+  const mode = state.type;
+  // Retos base
+  let base = [...(CHALLENGES_BASE[mode][levelIdx] || [])];
+
+  // Inyectar retos de accesorios seleccionados
+  state.accessories.forEach(accId => {
+    const accData = CHALLENGES_EXTRAS[accId];
+    if (!accData) return;
+    const modeData = accData[mode] || accData['fisica'] || {};
+    const extras = modeData[levelIdx + 1]; // los extras usan 1-based
+    if (extras && extras.length) {
+      // Añadir tag visual al texto
+      const tagged = extras.map(c => ({
+        ...c,
+        text: c.text + ` <span class="acc-tag">${getAccIcon(accId)}</span>`
+      }));
+      base = base.concat(tagged);
+    }
+  });
+
+  // No mezclar el nivel final — siempre mostrar uno al azar
+  if (levelIdx === TOTAL_LLAMAS - 1) {
+    return shuffle(base);
+  }
+
+  return shuffle(base);
+}
+
+function getAccIcon(id) {
+  const a = ACCESSORIES.find(x => x.id === id);
+  return a ? a.icon : '';
+}
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+// ╔══════════════════════════════════════════════════════════════╗
+// ║  NAVEGACIÓN                                                  ║
+// ╚══════════════════════════════════════════════════════════════╝
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function selectType(type, btn) {
+  state.type = type;
+  document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  document.getElementById('btn-type-next').disabled = false;
+}
+
+function goToNames() {
+  if (!state.type) return;
+  showScreen('screen-names');
+}
+
+function goToAccessories() {
+  const n1 = document.getElementById('name1').value.trim();
+  const n2 = document.getElementById('name2').value.trim();
+  if (!n1 || !n2) {
+    const card = document.querySelector('#screen-names .card');
+    card.classList.add('shake');
+    setTimeout(() => card.classList.remove('shake'), 400);
+    return;
+  }
+  state.name1 = cap(n1);
+  state.name2 = cap(n2);
+  state.accessories = [];
+  buildAccessoriesScreen();
+  showScreen('screen-accessories');
+}
+
+function startGame() {
+  state.levelIndex  = 0;
+  state.retoEnNivel = 0;
+  state.pool        = buildPool(0);
+  state.poolIdx     = 0;
+  showScreen('screen-challenge');
+  renderChallenge();
+}
+
+function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase(); }
+
+// ╔══════════════════════════════════════════════════════════════╗
+// ║  RENDER DE RETO                                              ║
+// ╚══════════════════════════════════════════════════════════════╝
+
+function renderChallenge() {
+  clearTimer();
+
+  const lvl     = state.levelIndex;
+  const isFinal = (lvl === TOTAL_LLAMAS - 1);
+  const flames  = lvl + 1;
+
+  // Obtener reto del pool
+  if (state.poolIdx >= state.pool.length) {
+    // Pool agotado — regenerar evitando el último reto
+    const last = state.currentChallenge;
+    state.pool = buildPool(lvl).filter(c => c !== last);
+    if (state.pool.length === 0) state.pool = buildPool(lvl);
+    state.poolIdx = 0;
+  }
+  const challenge = state.pool[state.poolIdx++];
+  state.currentChallenge = challenge;
+
+  // Progreso global: cada llama vale (100/TOTAL_LLAMAS)%, dentro de la llama avanza por retos
+  const progressBase = (lvl / TOTAL_LLAMAS) * 100;
+  const progressInner = isFinal ? 100 : (state.retoEnNivel / RETOS_POR_LLAMA) * (100 / TOTAL_LLAMAS);
+  const progress = Math.min(progressBase + progressInner, 98);
+
+  const flamesHtml = Array.from({length: TOTAL_LLAMAS}, (_, i) =>
+    `<span class="flame-icon ${i < flames ? 'active' : ''}">🔥</span>`
+  ).join('');
+
+  const levelLabels = ['Calentando motores','Subiendo temperatura','El fuego crece','Intensidad máxima','La noche es vuestra'];
+
+  // Contador de retos dentro del nivel (no se muestra en el final)
+  const counterHtml = isFinal ? '' :
+    `<div class="challenge-counter">Reto ${state.retoEnNivel + 1} de ${RETOS_POR_LLAMA} en este nivel</div>`;
+
+  // Timer
+  let timerSection = '';
+  const isTimed = !!(challenge.timer && challenge.timer > 0);
+  if (isTimed) {
+    const r = 44, circ = 2 * Math.PI * r;
+    timerSection = `
+      <div class="timer-display">
+        <div class="timer-ring">
+          <svg viewBox="0 0 100 100">
+            <circle class="track" cx="50" cy="50" r="${r}"/>
+            <circle class="prog" id="timer-circle" cx="50" cy="50" r="${r}"
+              stroke-dasharray="${circ}" stroke-dashoffset="0"/>
+          </svg>
+          <div class="timer-number" id="timer-num">${fmtTime(challenge.timer)}</div>
+        </div>
+        <div class="timer-label">Tiempo restante</div>
+      </div>`;
+  } else if (!isFinal) {
+    timerSection = `<div class="no-timer-badge">⏸ A vuestro ritmo</div>`;
+  }
+
+  // Botón principal
+  const isLastRetoInLevel = (state.retoEnNivel + 1 >= RETOS_POR_LLAMA);
+  let mainBtnText;
+  if (isFinal)             mainBtnText = '¡Disfrutad! 💜';
+  else if (isLastRetoInLevel) mainBtnText = 'Siguiente llama 🔥';
+  else                     mainBtnText = 'Siguiente reto →';
+
+  // Botones extra
+  const extraBtns = isFinal ? '' : `
+    <div class="action-row">
+      <button class="btn-action" onclick="changeChallenge()">🔀 Cambiar reto</button>
+      <button class="btn-action" onclick="skipLevel()">⏭ Saltar nivel</button>
+    </div>`;
+
+  document.getElementById('challenge-content').innerHTML = `
+    <div class="progress-bar-wrap">
+      <div class="progress-bar-fill" style="width:${progress}%"></div>
+    </div>
+    <div class="flames-row">${flamesHtml}</div>
+    <div class="challenge-level">${levelLabels[lvl]}</div>
+    ${counterHtml}
+    <div class="challenge-text">${fmtText(challenge.text)}</div>
+    ${timerSection}
+    <button class="btn-main" id="btn-continue" onclick="advanceGame()" ${isTimed ? 'disabled' : ''}>
+      ${mainBtnText}
+    </button>
+    ${extraBtns}
+  `;
+
+  if (isTimed) startTimer(challenge.timer);
+}
+
+// Sustituye {A} y {B} por nombres coloreados (aleatoriamente)
+function fmtText(text) {
+  let a, b;
+  if (Math.random() > 0.5) { a = state.name1; b = state.name2; }
+  else                      { a = state.name2; b = state.name1; }
+  return text
+    .replace(/{A}/g, `<span class="nh">${a}</span>`)
+    .replace(/{B}/g, `<span class="nh">${b}</span>`);
+}
+
+function fmtTime(secs) {
+  const m = Math.floor(secs / 60), s = secs % 60;
+  return m > 0 ? `${m}:${s.toString().padStart(2,'0')}` : `${s}s`;
+}
+
+// ╔══════════════════════════════════════════════════════════════╗
+// ║  LÓGICA DE AVANCE                                            ║
+// ╚══════════════════════════════════════════════════════════════╝
+
+function advanceGame() {
+  clearTimer();
+  const isFinal = (state.levelIndex === TOTAL_LLAMAS - 1);
+  if (isFinal) { showFinalScreen(); return; }
+
+  state.retoEnNivel++;
+
+  if (state.retoEnNivel >= RETOS_POR_LLAMA) {
+    // Subir de nivel
+    state.levelIndex++;
+    state.retoEnNivel = 0;
+    if (state.levelIndex >= TOTAL_LLAMAS) { showFinalScreen(); return; }
+    state.pool    = buildPool(state.levelIndex);
+    state.poolIdx = 0;
+  }
+
+  renderChallenge();
+}
+
+// Cambiar reto: mismo nivel, no avanza contador
+function changeChallenge() {
+  clearTimer();
+  renderChallenge();
+}
+
+// Saltar nivel completo
+function skipLevel() {
+  clearTimer();
+  state.levelIndex++;
+  state.retoEnNivel = 0;
+  if (state.levelIndex >= TOTAL_LLAMAS) { showFinalScreen(); return; }
+  state.pool    = buildPool(state.levelIndex);
+  state.poolIdx = 0;
+  renderChallenge();
+}
+
+// ╔══════════════════════════════════════════════════════════════╗
+// ║  TIMER                                                       ║
+// ╚══════════════════════════════════════════════════════════════╝
+
+function startTimer(seconds) {
+  const r = 44, circ = 2 * Math.PI * r, total = seconds;
+  state.timerLeft = seconds;
+  state.timerInterval = setInterval(() => {
+    state.timerLeft--;
+    const numEl  = document.getElementById('timer-num');
+    const circEl = document.getElementById('timer-circle');
+    const btn    = document.getElementById('btn-continue');
+    if (!numEl) { clearTimer(); return; }
+    numEl.textContent = fmtTime(state.timerLeft);
+    circEl.style.strokeDashoffset = circ * (1 - state.timerLeft / total);
+    if (state.timerLeft <= 0) {
+      clearTimer();
+      numEl.textContent = '✓';
+      if (btn) { btn.disabled = false; btn.style.animation = 'pulse 1s ease-in-out infinite'; }
+    }
+  }, 1000);
+}
+
+function clearTimer() {
+  if (state.timerInterval) { clearInterval(state.timerInterval); state.timerInterval = null; }
+}
+
+// ╔══════════════════════════════════════════════════════════════╗
+// ║  PANTALLA FINAL                                              ║
+// ╚══════════════════════════════════════════════════════════════╝
+
+function showFinalScreen() {
+  clearTimer();
+  showScreen('screen-final');
+  document.getElementById('final-msg').innerHTML =
+    `<span class="nh">${state.name1}</span> y <span class="nh">${state.name2}</span>, la noche es vuestra 💜 Sin reglas, sin turnos, sin prisa. Solo vosotros dos.`;
+  launchFinalEmojis();
+}
+
+function launchFinalEmojis() {
+  const container = document.getElementById('final-emojis');
+  container.innerHTML = '';
+  const emojis = ['🌡️','💊','🛡️','❤️‍🔥','💜','✨','🔥','💋','🫦','💑'];
+  for (let i = 0; i < 26; i++) {
+    const el = document.createElement('div');
+    el.className = 'final-emoji';
+    el.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+    el.style.left = Math.random() * 100 + 'vw';
+    el.style.animationDuration = (5 + Math.random() * 8) + 's';
+    el.style.animationDelay    = (Math.random() * 5) + 's';
+    el.style.fontSize          = (20 + Math.random() * 20) + 'px';
+    container.appendChild(el);
+  }
+}
+
+function playAgain() {
+  document.getElementById('final-emojis').innerHTML = '';
+  state.accessories = [];
+  document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('selected'));
+  document.getElementById('btn-type-next').disabled = true;
+  state.type = null;
+  showScreen('screen-type');
+}
+
+// ╔══════════════════════════════════════════════════════════════╗
+// ║  PARTÍCULAS DE FONDO                                         ║
+// ╚══════════════════════════════════════════════════════════════╝
+
+(function initParticles() {
+  const container = document.getElementById('particles');
+  const symbols = ['✦','·','∗','✧','◦'];
+  for (let i = 0; i < 18; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    p.textContent = symbols[Math.floor(Math.random() * symbols.length)];
+    p.style.left = Math.random() * 100 + 'vw';
+    p.style.fontSize = (8 + Math.random() * 10) + 'px';
+    p.style.color = `hsl(${270 + Math.random() * 60}, 80%, 70%)`;
+    p.style.animationDuration = (12 + Math.random() * 15) + 's';
+    p.style.animationDelay   = (-Math.random() * 15) + 's';
+    container.appendChild(p);
+  }
+})();
+</script>
+</body>
+</html>
