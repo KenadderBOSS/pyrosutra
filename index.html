@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🔥 PyroSutra — El Juego de Parejas</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script async src="https://tally.so/widgets/embed.js"></script>
+</head>
+<body>
+
+<div id="particles"></div>
+
+<div id="app">
+
+  <!-- ═══ PANTALLA 1: Tipo de pareja ═══ -->
+  <div class="screen active" id="screen-type">
+    <div class="logo">
+      <span class="logo-fire">🔥</span>
+      <span class="logo-title">PyroSutra</span>
+      <span class="logo-sub">El juego de parejas</span>
+    </div>
+    <div class="card">
+      <p class="card-title">¿Cómo vais a jugar?</p>
+      <div class="type-grid">
+        <button class="type-btn" onclick="selectType('fisica', this)">
+          <span class="icon">👫</span>
+          <span class="label">En persona</span>
+          <span class="desc">Misma habitación</span>
+        </button>
+        <button class="type-btn" onclick="selectType('virtual', this)">
+          <span class="icon">📱</span>
+          <span class="label">A distancia</span>
+          <span class="desc">Videollamada / chat</span>
+        </button>
+      </div>
+      <button class="btn-main" id="btn-type-next" onclick="goToNames()" disabled style="margin-top:20px">Continuar →</button>
+      <div style="margin-top:14px; text-align:center;">
+        <a href="https://ko-fi.com/TU_USUARIO" target="_blank" class="kofi-subtle">
+          ☕ Apoya PyroSutra en Ko-fi
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ PANTALLA 2: Nombres ═══ -->
+  <div class="screen" id="screen-names">
+    <div class="logo">
+      <span class="logo-fire" style="font-size:34px">🔥</span>
+      <span class="logo-title" style="font-size:34px">PyroSutra</span>
+    </div>
+    <div class="card">
+      <p class="card-title">¿Quiénes juegan esta noche?</p>
+      <div class="input-group">
+        <label class="input-label">Persona 1</label>
+        <input class="input-field" id="name1" type="text" placeholder="Tu nombre..." maxlength="20" autocomplete="off">
+      </div>
+      <div class="input-group">
+        <label class="input-label">Persona 2</label>
+        <input class="input-field" id="name2" type="text" placeholder="Su nombre..." maxlength="20" autocomplete="off">
+      </div>
+      <button class="btn-main" onclick="goToAccessories()">Continuar →</button>
+      <button class="btn-secondary" onclick="showScreen('screen-type')">← Volver</button>
+    </div>
+  </div>
+
+  <!-- ═══ PANTALLA 3: Accesorios / experiencia ═══ -->
+  <div class="screen" id="screen-accessories">
+    <div class="logo">
+      <span class="logo-fire" style="font-size:28px">🔥</span>
+      <span class="logo-title" style="font-size:28px">PyroSutra</span>
+    </div>
+    <div class="card">
+      <p class="card-title">Personaliza tu experiencia</p>
+      <p class="acc-intro">Selecciona lo que tenéis disponible esta noche.<br>El juego adaptará los retos automáticamente.</p>
+      <div class="acc-grid" id="acc-grid">
+        <!-- Se rellena dinámicamente desde script.js -->
+      </div>
+      <button class="btn-main" onclick="startGame()">🔥 ¡Empezar PyroSutra!</button>
+      <button class="btn-secondary" onclick="showScreen('screen-names')">← Volver</button>
+    </div>
+  </div>
+
+  <!-- ═══ PANTALLA 4: Reto activo ═══ -->
+  <div class="screen" id="screen-challenge">
+    <div class="card">
+      <div class="challenge-container" id="challenge-content"></div>
+    </div>
+  </div>
+
+  <!-- ═══ PANTALLA 5: Final ═══ -->
+  <div class="screen" id="screen-final">
+    <div class="final-emojis" id="final-emojis"></div>
+    <div class="card" style="text-align:center; position:relative; z-index:10;">
+      <div class="final-title">¡A disfrutar!</div>
+      <p class="final-subtitle" id="final-msg"></p>
+      <div style="font-size:38px; margin:22px 0; letter-spacing:8px;">🔥✨💜</div>
+
+      <!-- Postura aleatoria -->
+      <div class="postura-card" id="postura-card">
+        <div class="postura-label">POSTURA ALEATORIA</div>
+        <div class="postura-img-wrap">
+          <img id="postura-img" src="" alt="Postura del Kamasutra" class="postura-img">
+        </div>
+        <div class="postura-nombre" id="postura-nombre"></div>
+        <div class="postura-desc" id="postura-desc"></div>
+        <button class="btn-postura-nueva" onclick="randomPostura()">🔀 Otra postura</button>
+      </div>
+
+      <button class="btn-main" onclick="playAgain()" style="margin-top:18px;">🔄 Volver a jugar</button>
+
+      <!-- Valorar con Tally -->
+      <div style="margin-top:18px;">
+        <a href="#tally-open=GxLaZj&tally-emoji-text=😊&tally-emoji-animation=wave" class="tally-open-btn">
+          😊 Valorar
+        </a>
+      </div>
+
+      <!-- Ko-fi sutil -->
+      <div style="margin-top:18px; padding-top:16px; border-top:1px solid var(--border);">
+        <a href="https://ko-fi.com/TU_USUARIO" target="_blank" class="kofi-subtle kofi-subtle--gold">
+          ☕ Apoya PyroSutra en Ko-fi
+        </a>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<footer class="site-footer">
+  Esta página está hecha por <a href="https://rgonzalez.me" target="_blank" rel="noopener">Roberto González</a>,
+  desarrollada independientemente sin fines lucrativos. Las donaciones son opcionales y no suponen ventaja alguna.
+  Se asistió en la programación utilizando <a href="https://claude.ai" target="_blank" rel="noopener">Claude</a>.
+</footer>
+
+<script src="script.js"></script>
+</body>
+</html>
